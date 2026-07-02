@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>載重組合計算 | Load Combination</title>
+<style>
+  :root{--navy:#0b1f3a;--navy2:#13284a;--gold:#c9a14a;--gold2:#e0bf6e;--bg:#f5f3ee;--ink:#1c2530;--line:#d8d2c2;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Noto Sans TC","Segoe UI",sans-serif;background:var(--bg);color:var(--ink);}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#f5f3ee;padding:28px 32px;}
+  header h1{margin:0;font-size:22px;}
+  header span{color:var(--gold2);font-size:13px;display:block;margin-top:4px;}
+  main{max-width:980px;margin:0 auto;padding:28px 20px 60px;}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:24px;}
+  @media(max-width:800px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .card h2{font-size:15px;margin:0 0 14px;color:var(--navy);border-bottom:2px solid var(--gold);padding-bottom:8px;}
+  label{display:block;font-size:12.5px;color:#555;margin:10px 0 4px;}
+  input{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:#fafaf8;}
+  button{margin-top:16px;width:100%;padding:11px;border:none;border-radius:7px;background:var(--navy);color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+  button:hover{background:var(--navy2);}
+  table{width:100%;border-collapse:collapse;margin-top:4px;}
+  td,th{padding:7px 8px;border-bottom:1px solid #eee;font-size:13px;}
+  th{background:#f5f3ee;font-weight:600;color:var(--navy);font-size:12px;text-align:left;}
+  td:last-child{text-align:right;font-weight:700;font-size:14px;}
+  tr.max-row{background:#fff8e6;}
+  tr.max-row td{color:#8a5e00;}
+  tr.max-row td:last-child{color:var(--navy);font-size:15px;}
+  .note{font-size:12px;color:#888;margin-top:12px;line-height:1.7;}
+  .unit-note{font-size:11.5px;color:#aaa;margin-bottom:4px;}
+  .section{font-size:13px;font-weight:700;color:var(--navy);margin:12px 0 4px;padding-left:8px;border-left:3px solid var(--gold);}
+</style>
+</head>
+<body>
+<header>
+  <h1>載重組合計算器 (LRFD Load Combinations)</h1>
+  <span>ACI 318-19 §5.3 · 台灣建築技術規則 LRFD 組合 · 自動標示控制組合</span>
+</header>
+<main>
+<div class="grid">
+  <div class="card">
+    <h2>輸入載重（同一單位即可，kN 或 kN·m）</h2>
+    <p class="unit-note">各項輸入相同單位，計算結果以同單位輸出（力或彎矩皆適用）</p>
+
+    <div class="section">重力載重</div>
+    <label>D 靜載重 Dead Load</label>
+    <input id="D" type="number" value="100" step="1">
+    <label>L 活載重 Live Load</label>
+    <input id="L" type="number" value="80" step="1">
+    <label>Lr 屋頂活載重 Roof Live Load</label>
+    <input id="Lr" type="number" value="20" step="1">
+    <label>S 雪載重 Snow (台灣通常=0)</label>
+    <input id="S" type="number" value="0" step="1">
+    <label>R 雨水載重 Rain</label>
+    <input id="R" type="number" value="0" step="1">
+
+    <div class="section">側向載重</div>
+    <label>W 風力 Wind Load</label>
+    <input id="W" type="number" value="50" step="1">
+    <label>E 地震力 Earthquake (已含 ρ 超額強度係數如適用)</label>
+    <input id="E" type="number" value="80" step="1">
+
+    <div class="section">其他</div>
+    <label>F 液體壓力 Fluid Pressure</label>
+    <input id="F" type="number" value="0" step="1">
+    <label>H 土壓力 Earth Pressure</label>
+    <input id="H" type="number" value="0" step="1">
+    <label>T 溫度/變形 Temperature/Shrinkage</label>
+    <input id="T" type="number" value="0" step="1">
+
+    <button onclick="calc()">計算所有組合</button>
+    <div class="note">
+      依 ACI 318-19 §5.3.1 共 8 組基本 LRFD 載重組合展開。
+      E 輸入已係數化地震力（即 ρQE），若需含垂直地震分量 0.2SDS·D 請自行在 D 中加入。
+      控制組合（最大值）以金色背景標示。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>載重組合結果</h2>
+    <div id="result"><p style="color:#888">尚未計算</p></div>
+  </div>
+</div>
+</main>
+
+<script>
+function calc(){
+  const D  = +document.getElementById('D').value;
+  const L  = +document.getElementById('L').value;
+  const Lr = +document.getElementById('Lr').value;
+  const S  = +document.getElementById('S').value;
+  const R  = +document.getElementById('R').value;
+  const W  = +document.getElementById('W').value;
+  const E  = +document.getElementById('E').value;
+  const F  = +document.getElementById('F').value;
+  const H  = +document.getElementById('H').value;
+  const T  = +document.getElementById('T').value;
+
+  const combos = [
+    { name:'U1', formula:'1.4D + 1.4F',                          val: 1.4*D + 1.4*F },
+    { name:'U2', formula:'1.2D + 1.6L + 1.6F + 0.5(Lr or S or R)', val: 1.2*D + 1.6*L + 1.6*F + 0.5*Math.max(Lr,S,R) },
+    { name:'U3', formula:'1.2D + 1.6(Lr or S or R) + (1.0L or 0.5W)', val: 1.2*D + 1.6*Math.max(Lr,S,R) + Math.max(1.0*L, 0.5*W) },
+    { name:'U4', formula:'1.2D + 1.0W + 1.0L + 0.5(Lr or S or R)', val: 1.2*D + 1.0*W + 1.0*L + 0.5*Math.max(Lr,S,R) },
+    { name:'U5', formula:'0.9D + 1.0W + 1.6H',                   val: 0.9*D + 1.0*W + 1.6*H },
+    { name:'U6', formula:'1.2D + 1.0E + 1.0L + 0.2S',            val: 1.2*D + 1.0*E + 1.0*L + 0.2*S },
+    { name:'U7', formula:'0.9D + 1.0E + 1.6H',                   val: 0.9*D + 1.0*E + 1.6*H },
+    { name:'U8', formula:'1.2D + 1.6L + 1.6H + 0.5(Lr or S)',    val: 1.2*D + 1.6*L + 1.6*H + 0.5*Math.max(Lr,S) },
+  ];
+
+  const asdCombos = [
+    { name:'ASD1', formula:'D',               val: D },
+    { name:'ASD2', formula:'D + L',           val: D + L },
+    { name:'ASD3', formula:'D + Lr(or S or R)', val: D + Math.max(Lr,S,R) },
+    { name:'ASD4', formula:'D + 0.75L + 0.75(Lr or S or R)', val: D + 0.75*L + 0.75*Math.max(Lr,S,R) },
+    { name:'ASD5', formula:'D ± 0.6W',        val: D + 0.6*W },
+    { name:'ASD6', formula:'D + 0.7E',        val: D + 0.7*E },
+    { name:'ASD7', formula:'D + 0.75×0.7E + 0.75L + 0.75S', val: D + 0.75*0.7*E + 0.75*L + 0.75*S },
+    { name:'ASD8', formula:'0.6D ± 0.6W',     val: 0.6*D + 0.6*W },
+    { name:'ASD9', formula:'0.6D + 0.7E',     val: 0.6*D + 0.7*E },
+  ];
+
+  const maxLRFD = Math.max(...combos.map(c=>c.val));
+  const maxASD  = Math.max(...asdCombos.map(c=>c.val));
+
+  let html = `<p style="font-size:12.5px;color:#888;margin:0 0 8px">LRFD 最大控制組合：<strong style="color:var(--navy);font-size:15px">${maxLRFD.toFixed(2)}</strong>（金色列）</p>`;
+  html += '<table><tr><th>組合</th><th>公式</th><th>計算值</th></tr>';
+  combos.forEach(c=>{
+    const isMax = Math.abs(c.val - maxLRFD) < 0.001;
+    html += `<tr${isMax?' class="max-row"':''}>
+      <td>${c.name}${isMax?' ★':''}</td>
+      <td style="font-size:12px;color:#555">${c.formula}</td>
+      <td>${c.val.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += '</table>';
+
+  html += `<p style="font-size:12.5px;color:#888;margin:16px 0 8px">ASD 容許應力設計最大組合（供參考）：<strong style="color:var(--navy)">${maxASD.toFixed(2)}</strong></p>`;
+  html += '<table><tr><th>組合</th><th>公式</th><th>計算值</th></tr>';
+  asdCombos.forEach(c=>{
+    const isMax = Math.abs(c.val - maxASD) < 0.001;
+    html += `<tr${isMax?' class="max-row"':''}>
+      <td>${c.name}${isMax?' ★':''}</td>
+      <td style="font-size:12px;color:#555">${c.formula}</td>
+      <td>${c.val.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += '</table>';
+
+  document.getElementById('result').innerHTML = html;
+}
+window.onload = calc;
+</script>
+</body>
+</html>
