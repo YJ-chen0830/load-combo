@@ -75,6 +75,14 @@
     <div class="section">其他</div>
     <label>F 液體壓力</label><input id="F" type="number" value="0" step="1">
     <label>H 土壓力</label><input id="H" type="number" value="0" step="1">
+    <div class="section">本次組合類別</div>
+    <label>本次輸入的載重代表哪種內力？（供跨工具帶入時標示用途，避免誤用）</label>
+    <select id="lc-type">
+      <option value="">－未指定－</option>
+      <option value="P">軸力 P</option>
+      <option value="M">彎矩 M</option>
+      <option value="V">剪力 V</option>
+    </select>
     <button onclick="calc()">計算所有組合</button>
     <div class="note">控制組合（最大值）以金色背景★標示。</div>
   </div>
@@ -154,6 +162,13 @@ function calc(){
   });
   html+='</table>';
   document.getElementById('result').innerHTML=html;
+
+  if(window.JRH && JRH.saveOutput){
+    const lcType=document.getElementById('lc-type').value;
+    if(lcType){
+      JRH.saveOutput({value_LRFD:maxLRFD, value_ASD:maxASD, type:lcType});
+    }
+  }
 
   // Process
   let proc=`════════════════════════════════════════
