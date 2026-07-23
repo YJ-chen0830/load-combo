@@ -120,13 +120,12 @@ function calc(){
   const H=+document.getElementById('H').value;
 
   const mLrSR=Math.max(Lr,S,R);
-  const mLrS=Math.max(Lr,S);
 
   const combos=[
     {name:'U1',formula:'1.4D + 1.4F',                              val:1.4*D+1.4*F,
      detail:`1.4×${D} + 1.4×${F} = ${(1.4*D).toFixed(2)} + ${(1.4*F).toFixed(2)}`},
-    {name:'U2',formula:'1.2D + 1.6L + 1.6F + 0.5(Lr/S/R)',       val:1.2*D+1.6*L+1.6*F+0.5*mLrSR,
-     detail:`1.2×${D}+1.6×${L}+1.6×${F}+0.5×max(${Lr},${S},${R})\n     =${(1.2*D).toFixed(2)}+${(1.6*L).toFixed(2)}+${(1.6*F).toFixed(2)}+${(0.5*mLrSR).toFixed(2)}`},
+    {name:'U2',formula:'1.2(D+F) + 1.6(L+H) + 0.5(Lr/S/R)',       val:1.2*D+1.2*F+1.6*L+1.6*H+0.5*mLrSR,
+     detail:`1.2×(${D}+${F})+1.6×(${L}+${H})+0.5×max(${Lr},${S},${R})\n     =${(1.2*(D+F)).toFixed(2)}+${(1.6*(L+H)).toFixed(2)}+${(0.5*mLrSR).toFixed(2)}`},
     {name:'U3',formula:'1.2D + 1.6(Lr/S/R) + max(L, 0.5W)',       val:1.2*D+1.6*mLrSR+Math.max(L,0.5*W),
      detail:`1.2×${D}+1.6×${mLrSR}+max(${L}, 0.5×${W})\n     =${(1.2*D).toFixed(2)}+${(1.6*mLrSR).toFixed(2)}+${Math.max(L,0.5*W).toFixed(2)}`},
     {name:'U4',formula:'1.2D + 1.0W + 1.0L + 0.5(Lr/S/R)',        val:1.2*D+W+L+0.5*mLrSR,
@@ -137,8 +136,6 @@ function calc(){
      detail:`1.2×${D}+1.0×${E}+1.0×${L}+0.2×${S}\n     =${(1.2*D).toFixed(2)}+${E}+${L}+${(0.2*S).toFixed(2)}`},
     {name:'U7',formula:'0.9D + 1.0E + 1.6H',                       val:0.9*D+E+1.6*H,
      detail:`0.9×${D}+1.0×${E}+1.6×${H}\n     =${(0.9*D).toFixed(2)}+${E}+${(1.6*H).toFixed(2)}`},
-    {name:'U8',formula:'1.2D + 1.6L + 1.6H + 0.5(Lr/S)',           val:1.2*D+1.6*L+1.6*H+0.5*mLrS,
-     detail:`1.2×${D}+1.6×${L}+1.6×${H}+0.5×max(${Lr},${S})\n     =${(1.2*D).toFixed(2)}+${(1.6*L).toFixed(2)}+${(1.6*H).toFixed(2)}+${(0.5*mLrS).toFixed(2)}`},
   ];
 
   const asdCombos=[
@@ -200,7 +197,6 @@ function calc(){
 
   中間值：
   max(Lr, S, R)     = max(${Lr}, ${S}, ${R}) = ${mLrSR}
-  max(Lr, S)        = max(${Lr}, ${S}) = ${mLrS}
   max(L, 0.5W)      = max(${L}, ${(0.5*W).toFixed(1)}) = ${Math.max(L,0.5*W).toFixed(1)}
 
 【二、LRFD 各組合計算（ACI 318-19 §5.3.1）】\n`;
